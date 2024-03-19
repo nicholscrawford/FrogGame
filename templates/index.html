@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Controller</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .controller {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            touch-action: manipulation;
+        }
+
+        button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 24px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            touch-action: manipulation;
+        }
+
+        button:hover {
+            background-color: #e0e0e0;
+            border-color: #999;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="controller">
+        <button id="up">Up</button>
+        <div>
+            <button id="left">Left</button>
+            <button id="right">Right</button>
+        </div>
+    </div>
+
+    <script>
+        const buttons = document.querySelectorAll('button');
+        const socket = io(); // Initialize SocketIO connection
+        let spriteId; // Variable to store the sprite id
+    
+        socket.on('connect', function() {
+            console.log('Socket connected successfully!');
+        });
+    
+        // Listen for the 'sprite_created' event to get the sprite id
+        socket.on('sprite_created', function(data) {
+            spriteId = data.id;
+            console.log('Sprite created with id:', spriteId);
+        });
+    
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                console.log('Button clicked:', button.id);
+                // Emit the 'move' event with the direction and sprite id
+                socket.emit('move', { direction: button.id, sprite_id: spriteId });
+            });
+        });
+    </script>
+    
+</body>
+</html>
