@@ -8,7 +8,7 @@ import threading
 FULLSCREEN = False
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
-GROUND_HEIGHT = 50
+GROUND_HEIGHT = 100
 SPRITE_IMAGE_PATH = "imgs/frog.jpeg"
 
 # Initialize Pygame
@@ -35,6 +35,14 @@ class Ground(pygame.sprite.Sprite):
         )
 
 
+class MapComponent(pygame.sprite.Sprite):
+    def __init__(self, width, height, color, x, y):
+        super().__init__()
+        self.image = pygame.Surface((width, height))
+        self.image.fill(color)
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, sprite_id):
         super().__init__()
@@ -44,17 +52,52 @@ class Sprite(pygame.sprite.Sprite):
         )  # Resize to 100x100 pixels
         self.rect = self.image.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
         self.velocity = pygame.Vector2(0, 0)
-        self.gravity = 0.5
+        self.gravity = 1
         self.friction = 0.1  # Add friction attribute
         self.id = sprite_id
 
-    def update(self):
-        self.velocity.y += self.gravity
-        self.velocity *= 1 - self.friction  # Apply friction to velocity
+    def update(self, map_components=[]):
+        self.velocity.x *= 1 - self.friction
         self.rect.move_ip(self.velocity.x, self.velocity.y)
 
-        if self.rect.bottom >= WINDOW_HEIGHT - GROUND_HEIGHT:
-            self.rect.bottom = WINDOW_HEIGHT - GROUND_HEIGHT
+        # Vertical collision detection
+        falling = True
+        for component in map_components:
+            if pygame.sprite.collide_rect(self, component):
+                # Use linear interpolation to estimate the position of the sprite at the time of collision (before, since we're being lazy, and not using penetration depth)
+                # This will allow us to detect the direction of the collision
+                old_rect = self.rect.move(-self.velocity.x, -self.velocity.y)
+
+                # If we're above the object, we're probably landing on it.
+                if old_rect.bottom <= component.rect.top and self.velocity.y > 0:
+                    self.rect.bottom = component.rect.top + 1
+                    self.velocity.y = 0
+                    falling = False
+
+                # Check if we're resting on the object vertically
+                if self.rect.bottom == component.rect.top + 1:
+                    falling = False
+
+                # If we're below the object, we're probably hitting our head.
+                if old_rect.top >= component.rect.bottom:
+                    self.rect.top = component.rect.bottom
+                    self.velocity.y = 0
+
+                # If we're to the left of the object, we probably hit it from the right.
+                if old_rect.right <= component.rect.left:
+                    self.rect.right = component.rect.left
+                    self.velocity.x = 0
+
+                # If we're to the right of the object, we probably hit it from the left.
+                if old_rect.left >= component.rect.right:
+                    self.rect.left = component.rect.right
+                    self.velocity.x = 0
+
+        if falling:
+            self.velocity.y += self.gravity
+
+        if self.rect.bottom >= WINDOW_HEIGHT - GROUND_HEIGHT + 1:
+            self.rect.bottom = WINDOW_HEIGHT - GROUND_HEIGHT + 1
             self.velocity.y = 0
 
 
@@ -87,11 +130,18 @@ def handle_move(data):
 
     if sprite:
         if direction == "up":
-            sprite.velocity.y = -10
-        elif direction == "left":
-            sprite.velocity.x = -10
+            # Check if the sprite is on the ground or standing on a map component
+            collided_with = pygame.sprite.spritecollideany(sprite, collision_sprites)
+            if collided_with and (
+                isinstance(collided_with, Ground)
+                or isinstance(collided_with, MapComponent)
+            ):
+                sprite.velocity.y = -30
+
+        if direction == "left":
+            sprite.velocity.x = -20
         elif direction == "right":
-            sprite.velocity.x = 10
+            sprite.velocity.x = 20
 
 
 @socketio.on("disconnect")
@@ -109,11 +159,29 @@ def handle_disconnect():
         print(f"No sprite found for id {sprite_id}")
 
 
+# Inside the game loop function:
 def game_loop():
     global all_sprites
+    global collision_sprites
     ground = Ground()
     all_sprites = pygame.sprite.Group()
+    collision_sprites = pygame.sprite.Group()
     all_sprites.add(ground)
+    collision_sprites.add(ground)
+
+    # Create MapComponents for your level
+    map_components = [
+        MapComponent(200, 20, (255, 0, 0), 300, 500),
+        MapComponent(150, 20, (255, 0, 0), 600, 400),
+        MapComponent(200, 20, (255, 0, 0), 1200, 700),
+        MapComponent(200, 20, (255, 0, 0), 800, 900),
+        MapComponent(200, 50, (255, 0, 0), 700, 800),
+        MapComponent(200, 50, (255, 0, 0), 600, 700),
+        # Add more MapComponents as needed
+    ]
+
+    all_sprites.add(map_components)
+    collision_sprites.add(map_components)
 
     background_image = pygame.image.load("imgs/background.jpg")
     infoObject = pygame.display.Info()
@@ -127,9 +195,17 @@ def game_loop():
             if event.type == pygame.QUIT:
                 running = False
 
-        all_sprites.update()
+        # Get all sprite instances for collision detection
+        sprites_list = [
+            sprite for sprite in all_sprites.sprites() if isinstance(sprite, Sprite)
+        ]
+
+        # Update each sprite individually with the list of map components for collision detection
+        for sprite in sprites_list:
+            sprite.update(map_components)
 
         screen.blit(background_image, (0, 0))
+
         all_sprites.draw(screen)
 
         pygame.display.flip()
