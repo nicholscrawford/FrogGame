@@ -37,26 +37,52 @@
             cursor: pointer;
             transition: background-color 0.3s, border-color 0.3s;
             touch-action: manipulation;
+            user-select: none;
         }
 
         button:hover {
             background-color: #e0e0e0;
             border-color: #999;
         }
+
+        /* Added styles for dead overlay */
+        .dead-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 48px;
+            z-index: 1000; /* Ensure the overlay appears on top of everything */
+            display: none; /* Initially hide the overlay */
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
-    <div class="controller">
+    <!-- Dead overlay element -->
+    <div class="dead-overlay" id="deadOverlay">
+        Dead
+    </div>
+
+    <div class="controller" id="controller">
         <button id="up">Up</button>
         <div>
             <button id="left">Left</button>
             <button id="right">Right</button>
         </div>
+        <button id="grab">Grab</button>
     </div>
 
     <script>
         const buttons = document.querySelectorAll('button');
+        const controller = document.getElementById('controller')
+        const deadOverlay = document.getElementById('deadOverlay'); // Get the dead overlay element
         const socket = io(); // Initialize SocketIO connection
         let spriteId; // Variable to store the sprite id
     
@@ -67,7 +93,14 @@
         // Listen for the 'sprite_created' event to get the sprite id
         socket.on('sprite_created', function(data) {
             spriteId = data.id;
+            playerColor = data.color;
             console.log('Sprite created with id:', spriteId);
+            updateButtonColors(playerColor);
+        });
+
+        // Listen for the 'frog_dead' event to show the dead overlay
+        socket.on('frog_dead', function() {
+            deadOverlay.style.display = 'flex'; // Show the dead overlay
         });
     
         buttons.forEach(button => {
@@ -77,6 +110,10 @@
                 socket.emit('move', { direction: button.id, sprite_id: spriteId });
             });
         });
+
+        function updateButtonColors(color) {
+            controller.style.backgroundColor = color;
+        }
     </script>
     
 </body>
