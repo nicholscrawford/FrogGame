@@ -25,6 +25,7 @@
             background-color: #fff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             touch-action: manipulation;
+            user-select: none;
         }
 
         button {
@@ -60,6 +61,7 @@
             font-size: 48px;
             z-index: 1000; /* Ensure the overlay appears on top of everything */
             display: none; /* Initially hide the overlay */
+            touch-action: manipulation;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>

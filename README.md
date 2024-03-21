@@ -24,6 +24,10 @@ The connection address is printed to the terminal, and you should re-run the ser
 
 Adjust in main.py.
 
+## Colors
+
+Colors can be adjusted in main.py - once that's done, run map_builder.py to generate the alterations.
+
 ## Game Controls
 
 The game can be controlled using the buttons on the web interface:
@@ -32,10 +36,3 @@ The game can be controlled using the buttons on the web interface:
 * Left: Makes the frog move to the left.
 * Right: Makes the frog move to the right.
 * Grab: Makes the frog grab an object.
-
-## TODO
-
-* Draw and panelize backbackground, and background
-* Draw stretchable mapelements
-* Fix color rotation script
-* Make the map longer

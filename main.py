@@ -5,15 +5,12 @@ from flask_socketio import SocketIO, emit
 import threading
 import random
 from PIL import Image
-import math
-import subprocess
-import sys
 
 # Constants
-FULLSCREEN = False
+FULLSCREEN = True
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
-GROUND_HEIGHT = 100
+GROUND_HEIGHT = 900
 IMAGES_FOLDER = "color_rotated_imgs"
 FROG_STATIC = [
     f"{IMAGES_FOLDER}/Frog_Static1.png",
@@ -36,14 +33,20 @@ FROG_GRABBING = [
     f"{IMAGES_FOLDER}/Frog_Grabbing1.png",
     f"{IMAGES_FOLDER}/Frog_Grabbing2.png",
 ]
+MAPCOMPONENTS = [
+    f"imgs/MapElement1.png",
+    f"imgs/MapElement2.png",
+    # f"imgs/MapElement3.png",
+]
 
 PLAYER_COLORS = {
     "Green": (0, 255, 0),
     "DarkTeal": (48, 102, 89),
-    "DeepBlue": (14, 0, 163),
-    "Purple": (197, 0, 227),
+    "BurntOrange": (187, 127, 0),
     "Pink": (223, 167, 232),
     "Yellow": (255, 255, 0),
+    "YellowGreen": (107, 154, 0),
+    "Magenta": (201, 0, 133),
 }
 
 # Initialize Pygame
@@ -65,8 +68,8 @@ port_string = "Connect with: 10.17.116.127:5000"
 class MapComponent(pygame.sprite.Sprite):
     def __init__(self, width, height, color, x, y):
         super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(color)
+        self.image = pygame.image.load(random.choice(MAPCOMPONENTS)).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def reset_image(self, width, height, color, x, y):
@@ -322,22 +325,21 @@ def game_loop():
 
     # Create MapComponents for your level
     map_components = [
-        MapComponent(
-            WINDOW_WIDTH, GROUND_HEIGHT, (0, 255, 0), 0, WINDOW_HEIGHT - GROUND_HEIGHT
-        ),
-        MapComponent(200, 20, (255, 0, 0), 300, 500),
-        MapComponent(150, 20, (255, 0, 0), 600, 400),
-        MapComponent(200, 20, (255, 0, 0), 1200, 700),
-        MapComponent(200, 20, (255, 0, 0), 800, 900),
-        MapComponent(200, 50, (255, 0, 0), 700, 800),
-        MapComponent(200, 50, (255, 0, 0), 600, 700),
-        MapComponent(1920, 50, (255, 0, 0), 1000, 0),
-        MapComponent(200, 20, (255, 0, 0), 1900.0, 1020.0),
-        MapComponent(170, 120, (255, 0, 0), 823.0, 307.0),
-        MapComponent(140, 20, (255, 0, 0), 662.0, 154.0),
-        MapComponent(120, 20, (255, 0, 0), 1077.0, 787.0),
-        MapComponent(130, 60, (255, 0, 0), 1465.0, 557.0),
-        MapComponent(170, 40, (255, 0, 0), 1218.0, 427.0),
+        MapComponent(WINDOW_WIDTH, GROUND_HEIGHT, (0, 255, 0), 0, WINDOW_HEIGHT - 50),
+        MapComponent(330, 120, (255, 0, 0), 210.0, 907.0),
+        MapComponent(200, 110, (255, 0, 0), 152.0, 767.0),
+        MapComponent(240, 130, (255, 0, 0), 1532.0, 897.0),
+        MapComponent(340, 160, (255, 0, 0), 1718.0, 657.0),
+        MapComponent(180, 90, (255, 0, 0), 498.0, 644.0),
+        MapComponent(200, 140, (255, 0, 0), 701.0, 551.0),
+        MapComponent(200, 150, (255, 0, 0), 1011.0, 441.0),
+        MapComponent(280, 180, (255, 0, 0), 1.0, 301.0),
+        MapComponent(200, 120, (255, 0, 0), 1138.0, 268.0),
+        MapComponent(200, 120, (255, 0, 0), 788.0, 138.0),
+        MapComponent(200, 60, (255, 0, 0), 1390.0, -28.0),
+        MapComponent(200, 100, (255, 0, 0), 1045.0, -85.0),
+        MapComponent(200, 160, (255, 0, 0), 1448.0, 505.0),
+        MapComponent(120, 90, (255, 0, 0), 1368.0, 355.0),
         MapComponent(160, 20, (255, 0, 0), 1533.0, -173.0),
         MapComponent(160, 30, (255, 0, 0), 1163.0, -186.0),
         MapComponent(170, 30, (255, 0, 0), 1733.0, -316.0),
@@ -352,6 +354,61 @@ def game_loop():
         MapComponent(170, 20, (255, 0, 0), 6.0, -718.0),
         MapComponent(170, 50, (255, 0, 0), -284.0, -768.0),
         MapComponent(160, 70, (255, 0, 0), -524.0, -938.0),
+        MapComponent(200, 70, (255, 0, 0), -250.0, -1161.0),
+        MapComponent(200, 70, (255, 0, 0), 89.0, -1234.0),
+        MapComponent(200, 70, (255, 0, 0), 479.0, -1334.0),
+        MapComponent(140, 70, (255, 0, 0), -31.0, -1474.0),
+        MapComponent(170, 80, (255, 0, 0), 174.0, -1657.0),
+        MapComponent(120, 50, (255, 0, 0), 604.0, -1527.0),
+        MapComponent(180, 90, (255, 0, 0), 724.0, -1727.0),
+        MapComponent(150, 70, (255, 0, 0), 1076.0, -1670.0),
+        MapComponent(210, 90, (255, 0, 0), 1272.0, -1903.0),
+        MapComponent(150, 70, (255, 0, 0), 1750.0, -1906.0),
+        MapComponent(150, 50, (255, 0, 0), 2000.0, -2069.0),
+        MapComponent(180, 70, (255, 0, 0), 2116.0, -2292.0),
+        MapComponent(160, 80, (255, 0, 0), 2048.0, -2505.0),
+        MapComponent(160, 70, (255, 0, 0), 1773.0, -2638.0),
+        MapComponent(140, 70, (255, 0, 0), 1423.0, -2558.0),
+        MapComponent(180, 90, (255, 0, 0), 2083.0, -2828.0),
+        MapComponent(200, 70, (255, 0, 0), 2403.0, -2528.0),
+        MapComponent(140, 80, (255, 0, 0), 2543.0, -2778.0),
+        MapComponent(200, 70, (255, 0, 0), 1543.0, -2918.0),
+        MapComponent(180, 60, (255, 0, 0), 1129.0, -2761.0),
+        MapComponent(160, 60, (255, 0, 0), 831.0, -2954.0),
+        MapComponent(190, 80, (255, 0, 0), 350.0, -2957.0),
+        MapComponent(200, 70, (255, 0, 0), 110.0, -2817.0),
+        MapComponent(200, 70, (255, 0, 0), -360.0, -2940.0),
+        MapComponent(200, 70, (255, 0, 0), -747.0, -3073.0),
+        MapComponent(180, 90, (255, 0, 0), -927.0, -3263.0),
+        MapComponent(200, 80, (255, 0, 0), -626.0, -3476.0),
+        MapComponent(200, 70, (255, 0, 0), -394.0, -3699.0),
+        MapComponent(200, 50, (255, 0, 0), 183.0, -3722.0),
+        MapComponent(200, 80, (255, 0, 0), 748.0, -3605.0),
+        MapComponent(200, 80, (255, 0, 0), 1244.0, -3668.0),
+        MapComponent(200, 100, (255, 0, 0), 1796.0, -3651.0),
+        MapComponent(200, 90, (255, 0, 0), 2100.0, -3784.0),
+        MapComponent(200, 90, (255, 0, 0), 1886.0, -3997.0),
+        MapComponent(200, 90, (255, 0, 0), 2226.0, -4020.0),
+        MapComponent(200, 70, (255, 0, 0), 1476.0, -4110.0),
+        MapComponent(200, 120, (255, 0, 0), 868.0, -4203.0),
+        MapComponent(200, 70, (255, 0, 0), 434.0, -4226.0),
+        MapComponent(200, 70, (255, 0, 0), 214.0, -4386.0),
+        MapComponent(200, 80, (255, 0, 0), 604.0, -4526.0),
+        MapComponent(200, 80, (255, 0, 0), 904.0, -4706.0),
+        MapComponent(200, 120, (255, 0, 0), 645.0, -4959.0),
+        MapComponent(200, 60, (255, 0, 0), 1155.0, -4849.0),
+        MapComponent(200, 80, (255, 0, 0), 235.0, -4739.0),
+        MapComponent(200, 70, (255, 0, 0), 155.0, -5009.0),
+        MapComponent(60, 50, (255, 0, 0), 978.0, -5049.0),
+        MapComponent(140, 60, (255, 0, 0), 68.0, -5192.0),
+        MapComponent(80, 50, (255, 0, 0), 408.0, -5272.0),
+        MapComponent(60, 60, (255, 0, 0), 732.0, -5232.0),
+        MapComponent(200, 80, (255, 0, 0), 938.0, -5475.0),
+        MapComponent(150, 100, (255, 0, 0), 1345.0, -5598.0),
+        MapComponent(130, 70, (255, 0, 0), 1725.0, -5698.0),
+        MapComponent(110, 140, (255, 0, 0), 2084.0, -5821.0),
+        MapComponent(150, 70, (255, 0, 0), 2454.0, -5721.0),
+        MapComponent(40, 40, (255, 0, 0), 2624.0, -5921.0),
         # Add more MapComponents as needed
     ]
 
@@ -359,14 +416,25 @@ def game_loop():
     collision_sprites.add(map_components)
 
     background_image = pygame.image.load("imgs/border.png")
-    backbackground_image = pygame.image.load("imgs/background.jpg")
+    backbackground_image = pygame.image.load("imgs/Background.png")
     infoObject = pygame.display.Info()
     background_image = pygame.transform.scale(
         background_image, (infoObject.current_w, infoObject.current_h)
     )
+    # Scale the backbackground image by the width of the window size such that it covers the entire window
     backbackground_image = pygame.transform.scale(
-        backbackground_image, (infoObject.current_w * 1.4, infoObject.current_h * 1.4)
+        backbackground_image,
+        (
+            infoObject.current_w,
+            infoObject.current_w
+            / backbackground_image.get_width()
+            * backbackground_image.get_height(),
+        ),
     )
+
+    # backbackground_image = pygame.transform.scale(
+    #     backbackground_image, (infoObject.current_w *, infoObject.current_h * 2)
+    # )
 
     running = True
     while running:
@@ -428,8 +496,14 @@ def game_loop():
                 avg_x - WINDOW_WIDTH / 2, avg_y - WINDOW_HEIGHT / 2
             )
 
-        screen.blit(backbackground_image, camera_position * -0.1)
-        screen.blit(background_image, camera_position * -0.3)
+        # Fill the screen with a white background
+        screen.fill((255, 255, 255))
+
+        screen.blit(
+            backbackground_image,
+            (camera_position.x * -0.1, camera_position.y * -0.1 - 3000),
+        )
+        # screen.blit(background_image, camera_position * -0.3)
 
         for sprite in sprites_list:
             if (
