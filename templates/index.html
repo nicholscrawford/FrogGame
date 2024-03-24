@@ -65,6 +65,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="joy.js"></script>
 </head>
 <body>
     <!-- Dead overlay element -->
@@ -73,15 +74,14 @@
     </div>
 
     <div class="controller" id="controller">
-        <button id="up">Up</button>
-        <div>
-            <button id="left">Left</button>
-            <button id="right">Right</button>
-        </div>
+        <div id="joyDiv" style="width:200px;height:200px;margin-bottom:20px;"></div>
+
         <button id="grab">Grab</button>
     </div>
 
     <script>
+        var joy = new JoyStick('joyDiv');
+
         const buttons = document.querySelectorAll('button');
         const controller = document.getElementById('controller')
         const deadOverlay = document.getElementById('deadOverlay'); // Get the dead overlay element
@@ -109,9 +109,13 @@
             button.addEventListener('click', () => {
                 console.log('Button clicked:', button.id);
                 // Emit the 'move' event with the direction and sprite id
-                socket.emit('move', { direction: button.id, sprite_id: spriteId });
+                socket.emit('grab', { sprite_id: spriteId });
             });
         });
+
+        setInterval(function(){ 
+            socket.emit('move', { x: joy.GetX(), y: joy.GetY()});
+        }, 100);
 
         function updateButtonColors(color) {
             controller.style.backgroundColor = color;

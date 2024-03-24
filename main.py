@@ -1,6 +1,6 @@
 import pygame
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, send_from_directory, request
 from flask_socketio import SocketIO, emit
 import threading
 import random
@@ -109,6 +109,8 @@ class Player(pygame.sprite.Sprite):
     def update(self, map_components=[]):
         self.velocity.x *= 1 - self.friction
         self.rect.move_ip(self.velocity.x, self.velocity.y)
+        if self.velocity.x < 5 and self.velocity.x > -5:
+            self.leaping = False
 
         # Vertical collision detection
         falling = True
@@ -221,6 +223,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/joy.js")
+def serve_joy_js():
+    return send_from_directory(".", "joy.js")
+
+
 @socketio.on("connect")
 def handle_connect():
     global color_idx
@@ -231,10 +238,10 @@ def handle_connect():
     new_sprite = Player(sprite_id, color=color_name)
 
     # Center the sprite at the camera center
-    new_sprite.rect.center = (
-        camera_position.x + WINDOW_WIDTH / 2,
-        camera_position.y + WINDOW_HEIGHT / 2,
-    )
+    # new_sprite.rect.center = (
+    #     camera_position.x + WINDOW_WIDTH / 2,
+    #     camera_position.y + WINDOW_HEIGHT / 2,
+    # )
 
     players[sprite_id] = new_sprite
     all_sprites.add(new_sprite)  # Add the sprite to the all_sprites group
@@ -243,12 +250,13 @@ def handle_connect():
 
 @socketio.on("move")
 def handle_move(data):
-    direction = data["direction"]
+    joyx = int(data["x"])
+    joyy = int(data["y"])
     sprite_id = request.sid
     sprite = players.get(sprite_id)
 
     if sprite:
-        if direction == "up":
+        if joyy >= 50:
             # Check if the sprite is on the ground or standing on a map component
             collided_with = pygame.sprite.spritecollideany(sprite, collision_sprites)
             if collided_with and (isinstance(collided_with, MapComponent)):
@@ -256,53 +264,61 @@ def handle_move(data):
                 sprite.jumping = True
                 sprite.animation_counter = 0
 
-        if direction == "left":
-            sprite.velocity.x = -20
+        if joyx < 5:
+            sprite.velocity.x = joyx / 5
             sprite.facing_left = True
-            sprite.leaping = True
-            sprite.animation_counter = 0
-        elif direction == "right":
+            if not sprite.leaping:
+                sprite.leaping = True
+                animation_counter = 0
+        elif joyx > 5:
             sprite.facing_left = False
-            sprite.velocity.x = 20
-            sprite.leaping = True
-            sprite.animation_counter = 0
-        elif direction == "grab":
-            if sprite.grabbing:
-                sprite.grabbing = False
-                for object_sprite in list(players.values()):
-                    if object_sprite.grabbed == sprite.id:
-                        object_sprite.grabbed = False
+            sprite.velocity.x = joyx / 5
+            if not sprite.leaping:
+                sprite.leaping = True
+                animation_counter = 0
 
-                        # Add velocity to the grabbed sprite like a throw based on direction of sprite
-                        object_sprite.velocity.x = -20 if sprite.facing_left else 20
 
-            # Check if any sprites are in range, and if so, grab them and mark.
-            if not sprite.grabbing:
-                sprite.grabbing_animation = True
-                sprite.animation_counter = 0
-                for object_sprite in list(players.values()):
-                    if object_sprite.id != sprite.id:
-                        if sprite.facing_left and (
-                            sprite.rect.centerx - 180
-                            < object_sprite.rect.centerx
-                            < sprite.rect.centerx
-                            and sprite.rect.centery - 10
-                            < object_sprite.rect.centery
-                            < sprite.rect.centery + 10
-                        ):
-                            object_sprite.grabbed = sprite.id
-                            sprite.grabbing = True
+@socketio.on("grab")
+def handle_grab(data):
+    sprite_id = request.sid
+    sprite = players.get(sprite_id)
 
-                        elif (
-                            sprite.rect.centerx
-                            < object_sprite.rect.centerx
-                            < sprite.rect.centerx + 180
-                            and sprite.rect.centery - 10
-                            < object_sprite.rect.centery
-                            < sprite.rect.centery + 10
-                        ):
-                            object_sprite.grabbed = sprite.id
-                            sprite.grabbing = True
+    if sprite.grabbing:
+        sprite.grabbing = False
+        for object_sprite in list(players.values()):
+            if object_sprite.grabbed == sprite.id:
+                object_sprite.grabbed = False
+
+                # Add velocity to the grabbed sprite like a throw based on direction of sprite
+                object_sprite.velocity.x = -20 if sprite.facing_left else 20
+
+    # Check if any sprites are in range, and if so, grab them and mark.
+    if not sprite.grabbing:
+        sprite.grabbing_animation = True
+        sprite.animation_counter = 0
+        for object_sprite in list(players.values()):
+            if object_sprite.id != sprite.id:
+                if sprite.facing_left and (
+                    sprite.rect.centerx - 180
+                    < object_sprite.rect.centerx
+                    < sprite.rect.centerx
+                    and sprite.rect.centery - 10
+                    < object_sprite.rect.centery
+                    < sprite.rect.centery + 10
+                ):
+                    object_sprite.grabbed = sprite.id
+                    sprite.grabbing = True
+
+                elif (
+                    sprite.rect.centerx
+                    < object_sprite.rect.centerx
+                    < sprite.rect.centerx + 180
+                    and sprite.rect.centery - 10
+                    < object_sprite.rect.centery
+                    < sprite.rect.centery + 10
+                ):
+                    object_sprite.grabbed = sprite.id
+                    sprite.grabbing = True
 
 
 @socketio.on("disconnect")
