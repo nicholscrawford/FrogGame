@@ -62,7 +62,7 @@ clock = pygame.time.Clock()
 players = {}
 sprite_id_counter = 0
 color_idx = 0
-port_string = "Connect with: 10.17.116.127:5000"
+port_string = "Connect with: http://192.168.0.48:5000"
 
 
 class MapComponent(pygame.sprite.Sprite):
@@ -156,7 +156,7 @@ class Player(pygame.sprite.Sprite):
                     if hasattr(sprite, "grabbed") and sprite.grabbed == self.id:
                         # If the player is grabbing another player, move the grabbed player with the grabbing player
                         sprite.rect.x = self.rect.x
-                        sprite.rect.y = self.rect.y - 100
+                        sprite.rect.y = self.rect.y - 63
 
         self.animate()
 
@@ -229,6 +229,13 @@ def handle_connect():
     color_idx = (color_idx + 1) % len(PLAYER_COLORS)
 
     new_sprite = Player(sprite_id, color=color_name)
+
+    # Center the sprite at the camera center
+    new_sprite.rect.center = (
+        camera_position.x + WINDOW_WIDTH / 2,
+        camera_position.y + WINDOW_HEIGHT / 2,
+    )
+
     players[sprite_id] = new_sprite
     all_sprites.add(new_sprite)  # Add the sprite to the all_sprites group
     emit("sprite_created", {"id": sprite_id, "color": f"rgb{color_rgb}"})
@@ -265,6 +272,9 @@ def handle_move(data):
                 for object_sprite in list(players.values()):
                     if object_sprite.grabbed == sprite.id:
                         object_sprite.grabbed = False
+
+                        # Add velocity to the grabbed sprite like a throw based on direction of sprite
+                        object_sprite.velocity.x = -20 if sprite.facing_left else 20
 
             # Check if any sprites are in range, and if so, grab them and mark.
             if not sprite.grabbing:
@@ -415,12 +425,12 @@ def game_loop():
     all_sprites.add(map_components)
     collision_sprites.add(map_components)
 
-    background_image = pygame.image.load("imgs/border.png")
+    # background_image = pygame.image.load("imgs/Border.png")
     backbackground_image = pygame.image.load("imgs/Background.png")
     infoObject = pygame.display.Info()
-    background_image = pygame.transform.scale(
-        background_image, (infoObject.current_w, infoObject.current_h)
-    )
+    # background_image = pygame.transform.scale(
+    #     background_image, (infoObject.current_w, infoObject.current_h)
+    # )
     # Scale the backbackground image by the width of the window size such that it covers the entire window
     backbackground_image = pygame.transform.scale(
         backbackground_image,
@@ -515,6 +525,17 @@ def game_loop():
                     if player_sprite == sprite:
                         dead_player_id = player_id
                         break
+
+                for grabbed_sprite in all_sprites:
+                    if (
+                        isinstance(grabbed_sprite, Player)
+                        and grabbed_sprite.id != player_id
+                    ):
+                        if (
+                            hasattr(grabbed_sprite, "grabbed")
+                            and grabbed_sprite.grabbed == player_id
+                        ):
+                            grabbed_sprite.grabbed = False
 
                 if dead_player_id:
                     # Emit message to the specific player indicating frog death

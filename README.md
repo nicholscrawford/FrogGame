@@ -36,3 +36,13 @@ The game can be controlled using the buttons on the web interface:
 * Left: Makes the frog move to the left.
 * Right: Makes the frog move to the right.
 * Grab: Makes the frog grab an object.
+
+
+## TODO:
+
+Playtest notes: 
+* Minimum max height for players to spawn, to avoid spamming. 
+* Sometimes freezes screen - no error message?
+
+Refactor to make the code actually usable
+Try out joystick?
